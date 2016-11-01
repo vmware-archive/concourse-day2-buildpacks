@@ -1,0 +1,88 @@
+groups:
+
+- name: all
+  jobs:
+  - update-buildpacks
+  - test-buildpack-java
+
+- name: update
+  jobs:
+  - update-buildpacks
+
+- name: test
+  jobs:
+  - test-buildpack-java
+
+resource_types:
+
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+
+- name: concourse-day2-buildpacks
+  type: git
+  source:
+    uri: git@github.com:c0-ops/concourse-day2-buildpacks.git
+    branch: master
+    private_key: {{githubsshkey}}
+
+- name: pivnet-java-buildpack
+  type: pivnet
+  check_every: 2h
+  source:
+    api_token: {{pcf_pivnet_token}}
+    product_slug: ops-manager
+
+- name: java-buildpack-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/java-buildpack-release
+
+
+jobs:
+
+- name: update-buildpacks
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+    - get: java-buildpack-release
+      trigger: true
+  - task: update-buildpacks
+    config:
+      platform: linux
+      image: docker:///virtmerlin/deploy-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: java-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
+
+- name: test-buildpack-java
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: true
+      passed: [update-buildpacks]
+    - get: java-buildpack-release
+      trigger: true
+      passed: [update-buildpacks]
+  - task: test-buildpack-java
+    config:
+      platform: linux
+      image: docker:///virtmerlin/deploy-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: java-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/test/test-buildpack-java.sh
