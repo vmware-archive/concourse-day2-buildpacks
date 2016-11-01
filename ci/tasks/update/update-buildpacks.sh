@@ -3,11 +3,8 @@
 set -e
 
 # install cf cli
-wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
-echo "deb http://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
-sudo apt-get update
-sudo apt-get install -y apt-transport-https
-sudo apt-get install -y cf-cli
+sudo wget -S -O /tmp/cfcli.deb https://cli.run.pivotal.io/stable?release=debian64&version=latest&source=github-rel
+sudo dpkg -i /tmp/cfcli.deb && apt-get install -f
 
 # log into CF
 cf api https://${cf_api} --skip-ssl-validation
