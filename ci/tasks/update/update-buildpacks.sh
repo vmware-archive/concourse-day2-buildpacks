@@ -3,7 +3,7 @@
 set -e
 
 # install cf cli
-sudo wget -O /tmp/cfcli.deb 'https://cli.run.pivotal.io/stable?release=debian64&version=latest&source=github-rel'
+sudo wget -O /tmp/cfcli.deb "https://cli.run.pivotal.io/stable?release=debian64&version=6.22.2&source=github-rel"
 sudo dpkg -i /tmp/cfcli.deb && apt-get install -f
 
 # log into CF
