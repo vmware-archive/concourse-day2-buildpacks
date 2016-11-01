@@ -58,6 +58,10 @@ jobs:
         - name: java-buildpack-release
       run:
         path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
+      params:
+        cf_api: {{cf_api}}
+        cf_user: {{cf_user}}
+        cf_password: {{cf_password}}
 
 - name: test-buildpack-java
   serial: true
