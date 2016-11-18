@@ -25,6 +25,7 @@ function fn_get_buildpack_id {
 }
 
 function fn_restage_apps_with_buildpack {
+  let "FAIL=0"
 
   local buildpack_id=${1}
   declare -a apps
@@ -34,7 +35,16 @@ function fn_restage_apps_with_buildpack {
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
       $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh $x &
   done
-  echo $(jobs -p)
+
+  for job in $(jobs -p); do
+    wait $job || let "FAIL+=1"
+  done
+
+  if [ $FAIL -gt 0 ]; then
+      exit 1
+  else
+      echo "All Apps with buildpack ${buildpack} have sucessfully restaged"
+      exit 0
 }
 
 
@@ -45,8 +55,6 @@ function fn_trigger {
   fn_auth_cli
   buildpack_id=$(fn_get_buildpack_id "${buildpack}")
   fn_restage_apps_with_buildpack "${buildpack_id}"
-
-  exit 1
 
 }
 

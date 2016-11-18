@@ -11,7 +11,7 @@ function fn_auth_cli {
 function fn_check_app_health {
 
   local app_id=${1}
-  let 'timeout = 120'
+  let 'timeout = 300'
   sleep 3
 
   for (( x=0; x < $timeout; x++ )); do
@@ -40,8 +40,11 @@ function fn_check_app_health {
   done
 
   if [[ ! ${healthy_count} -eq ${ai_count} ]]; then
-    echo "App Not Running" 1>&2
+    echo "AppID:${1} Not Running" 1>&2
     exit 1
+  else
+    echo "AppID:${1} Running :) "
+    exit 0
   fi
 }
 
