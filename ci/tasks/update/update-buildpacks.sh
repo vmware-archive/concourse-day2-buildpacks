@@ -36,6 +36,8 @@ function fn_restage_apps_with_buildpack {
       $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh $x &
   done
 
+  echo "Wating for Healthcheck Jobs to finish ..."
+  
   for job in $(jobs -p); do
     wait $job || let "FAIL+=1"
   done
