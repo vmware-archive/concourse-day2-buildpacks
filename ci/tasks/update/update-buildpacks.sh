@@ -3,8 +3,8 @@
 set -e
 
 # install latest cf cli
-sudo wget -O /tmp/cfcli.deb "https://cli.run.pivotal.io/stable?release=debian64&version=6.22.2&source=github-rel"
-sudo dpkg -i /tmp/cfcli.deb && apt-get install -f
+sudo wget -O /tmp/cfcli.deb "https://cli.run.pivotal.io/stable?release=debian64&version=6.22.2&source=github-rel"  > /dev/null 2>&1
+sudo dpkg -i /tmp/cfcli.deb && apt-get install -f  > /dev/null 2>&1
 
 # Functions
 
@@ -28,7 +28,7 @@ function fn_restage_apps_with_buildpack {
 
   echo "Starting Healthcheck Jobs ..."
 
-  let "FAIL=0"
+  #let "FAIL=0"
 
   local buildpack_id=${1}
   declare -a apps
@@ -43,7 +43,7 @@ function fn_restage_apps_with_buildpack {
   echo "Wating for Healthcheck Jobs to finish ..."
 
   for job in $(jobs -p); do
-    wait $job || let "FAIL+=1"
+    wait $job || #let "FAIL+=1"
   done
 
   if [ $FAIL -gt 0 ]; then
