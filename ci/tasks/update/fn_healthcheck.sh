@@ -18,8 +18,8 @@ function fn_check_app_health {
         let 'healthy_count = 0'
 
         for x in $(eval ${app_instance_state_cmd}); do
-            app_instance_id=$(echo $app_instance_id | awk -F "," '{print$1}')
-            app_instance_state=$(echo $app_instance_id | awk -F "," '{print$2}')
+            app_instance_id=$(echo $x | awk -F "," '{print$1}')
+            app_instance_state=$(echo $x | awk -F "," '{print$2}')
             if [[ ${app_instance_state} == "RUNNING" ]]; then
               echo ${app_id}":instance[${app_instance_id}]-state:"${app_instance_state}
               (( healthy_count++ ))
