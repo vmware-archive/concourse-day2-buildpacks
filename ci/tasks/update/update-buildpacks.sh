@@ -32,7 +32,7 @@ function fn_restage_apps_with_buildpack {
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
-      bash -c "source $PWD/concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh && fn_check_app_health $x" &
+      bash -c "source $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh && fn_check_app_health $x" &
   done
 
 }
