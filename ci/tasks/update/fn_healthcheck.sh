@@ -1,8 +1,6 @@
 #!/bin/bash
 # Checks for restaged apps to enter a running state
 
-set -e
-
 function fn_check_app_health {
 
   local app_id=${1}
