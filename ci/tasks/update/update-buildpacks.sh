@@ -6,8 +6,9 @@ set -e
 sudo wget -O /tmp/cfcli.deb "https://cli.run.pivotal.io/stable?release=debian64&version=6.22.2&source=github-rel"  > /dev/null 2>&1
 sudo dpkg -i /tmp/cfcli.deb && apt-get install -f  > /dev/null 2>&1
 
-# Functions
-
+###############################
+# Functions   #################
+###############################
 function fn_auth_cli {
 
   cf api ${cf_api} --skip-ssl-validation > /dev/null 2>&1
@@ -28,9 +29,8 @@ function fn_restage_apps_with_buildpack {
 
   echo "Starting Healthcheck Jobs ..."
 
-  #let "FAIL=0"
-
   local buildpack_id=${1}
+  local pids=""
   declare -a apps
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
@@ -38,13 +38,19 @@ function fn_restage_apps_with_buildpack {
       echo "Restaging ${x}"
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
       $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh $x &
+      pids+="$! "
   done
 
   echo "Wating for Healthcheck Jobs to finish ..."
 
-  for my_job in $(jobs -p); do
+  for my_job in ${pids}; do
     echo "wait:$my_job"
-    wait $my_job #let "FAIL+=1"
+    wait $my_job
+    if [ $? -eq 0 ]; then
+        echo "SUCCESS - Job $pid exited with a status of $?"
+    else
+        echo "FAILED - Job $pid exited with a status of $?"
+    fi
   done
 
   if [ $FAIL -gt 0 ]; then
