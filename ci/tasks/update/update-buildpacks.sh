@@ -10,8 +10,8 @@ sudo dpkg -i /tmp/cfcli.deb && apt-get install -f
 
 function fn_auth_cli {
 
-  cf api ${cf_api} --skip-ssl-validation
-  cf login -u ${cf_user} -p ${cf_password} -o system -s system
+  cf api ${cf_api} --skip-ssl-validation > /dev/null 2>&1
+  cf login -u ${cf_user} -p ${cf_password} -o system -s system > /dev/null 2>&1
 
 }
 
@@ -35,6 +35,7 @@ function fn_restage_apps_with_buildpack {
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
+      echo "Restaging ${x}"
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
       $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh $x &
   done
