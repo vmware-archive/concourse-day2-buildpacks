@@ -28,9 +28,10 @@ function fn_restage_apps_with_buildpack {
 
   local buildpack_id=${1}
   declare -a apps
-  my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr '\"'"
+  my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
+      echo "Restaging App GUID="$x" ..."
       cf curl -X POST /v2/apps/$x/restage
   done
 
