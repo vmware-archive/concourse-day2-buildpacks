@@ -25,6 +25,9 @@ function fn_get_buildpack_id {
 }
 
 function fn_restage_apps_with_buildpack {
+
+  echo "Starting Healthcheck Jobs ..."
+
   let "FAIL=0"
 
   local buildpack_id=${1}
@@ -37,7 +40,7 @@ function fn_restage_apps_with_buildpack {
   done
 
   echo "Wating for Healthcheck Jobs to finish ..."
-  
+
   for job in $(jobs -p); do
     wait $job || let "FAIL+=1"
   done

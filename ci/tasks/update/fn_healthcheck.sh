@@ -48,5 +48,5 @@ function fn_check_app_health {
   fi
 }
 
-fn_auth_cli
+#fn_auth_cli
 fn_check_app_health ${1}
