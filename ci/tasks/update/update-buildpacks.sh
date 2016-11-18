@@ -31,7 +31,7 @@ function fn_restage_apps_with_buildpack {
 
   local buildpack_id=${1}
   local pids=""
-  let 'fail_count = 0'
+  let 'failcount = 0'
   declare -a apps
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
@@ -52,7 +52,7 @@ function fn_restage_apps_with_buildpack {
         echo "SUCCESS - Healthcheck for apps $my_app exited with a status of $?"
     else
         echo "FAILED - Healthcheck for apps $my_app exited with a status of $?"
-        (( fail_count++ ))
+        (( failcount++ ))
     fi
   done
 
