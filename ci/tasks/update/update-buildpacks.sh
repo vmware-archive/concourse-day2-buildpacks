@@ -45,8 +45,8 @@ function fn_restage_apps_with_buildpack {
   echo "Wating for Healthcheck Jobs to finish ..."
 
   for my_job in ${pids}; do
-    my_pid=$(echo $my_job | awk -f ":" '{print$1}')
-    my_app=$(echo $my_job | awk -f ":" '{print$2}')
+    my_pid=$(echo $my_job | awk -F ":" '{print$1}')
+    my_app=$(echo $my_job | awk -F ":" '{print$2}')
     wait $my_pid
     if [ $? -eq 0 ]; then
         echo "SUCCESS - Healthcheck for apps $my_app exited with a status of $?"
