@@ -90,7 +90,7 @@ jobs:
       trigger: false
       passed: [update-buildpacks-java]
     - get: java-buildpack-release
-      trigger: false
+      trigger: true
       passed: [update-buildpacks-java]
   - task: test-buildpack-java
     config:
@@ -99,8 +99,6 @@ jobs:
       inputs:
         - name: concourse-day2-buildpacks
         - name: java-buildpack-release
-      run:
-        path: concourse-day2-buildpacks/ci/tasks/test/test-buildpack-java.sh
 
 - name: update-buildpacks-go
   serial: true
@@ -137,7 +135,7 @@ jobs:
       trigger: false
       passed: [update-buildpacks-go]
     - get: go-buildpack-release
-      trigger: false
+      trigger: true
       passed: [update-buildpacks-go]
   - task: test-buildpack-go
     config:
