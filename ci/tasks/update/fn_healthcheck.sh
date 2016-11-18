@@ -1,13 +1,4 @@
 #!/bin/bash
-
-
-function fn_auth_cli {
-
-  cf api ${cf_api} --skip-ssl-validation
-  cf login -u ${cf_user} -p ${cf_password} -o system -s system
-
-}
-
 function fn_check_app_health {
 
   local app_id=${1}
@@ -17,9 +8,8 @@ function fn_check_app_health {
   for (( x=0; x < $timeout; x++ )); do
 
         declare -a app_instances
-        app_stage_state_cmd="cf curl /v2/apps/${app_id} | jq .entity.package_state | tr -d '\"'"
-        app_stage_state=$(eval $app_state_cmd)
-        app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
+        #app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
+        app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq -r 'keys[] as $k | [$k,(.[$k].state)] | @csv' | tr -d '\"'"
         let 'ai_count = 0'
         for y in $(eval ${app_instance_state_cmd}); do
                 (( ai_count++ ))
@@ -27,9 +17,14 @@ function fn_check_app_health {
         let 'healthy_count = 0'
 
         for x in $(eval ${app_instance_state_cmd}); do
-            if [[ ${x} == "RUNNING" ]]; then
-              echo ${app_id}":instance-state:"${x}
+            app_instance_id=$(echo $app_instance_id | awk -F "," '{print$1}')
+            app_instance_state=$(echo $app_instance_id | awk -F "," '{print$2}')
+            if [[ ${app_instance_state} == "RUNNING" ]]; then
+              echo ${app_id}":instance[${app_instance_id}]-state:"${app_instance_state}
               (( healthy_count++ ))
+            else
+              echo ${app_id}":instance[${app_instance_id}]-state:"${app_instance_state}
+              echo "Not Healthy Yet...."
             fi
         done
 
@@ -48,5 +43,4 @@ function fn_check_app_health {
   fi
 }
 
-#fn_auth_cli
 fn_check_app_health ${1}

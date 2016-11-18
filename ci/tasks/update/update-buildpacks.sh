@@ -31,6 +31,7 @@ function fn_restage_apps_with_buildpack {
 
   local buildpack_id=${1}
   local pids=""
+  let "FAIL=0"
   declare -a apps
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
@@ -38,29 +39,31 @@ function fn_restage_apps_with_buildpack {
       echo "Restaging ${x}"
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
       $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh $x &
-      pids+="$! "
+      pids+="$!:$x"
   done
 
   echo "Wating for Healthcheck Jobs to finish ..."
 
   for my_job in ${pids}; do
-    echo "wait:$my_job"
-    wait $my_job
+    my_pid=$(echo $my_job | awk -f ":" '{print$1}')
+    my_app=$(echo $my_job | awk -f ":" '{print$2}')
+    wait $my_pid
     if [ $? -eq 0 ]; then
-        echo "SUCCESS - Job $pid exited with a status of $?"
+        echo "SUCCESS - Healthcheck for apps $my_app exited with a status of $?"
     else
-        echo "FAILED - Job $pid exited with a status of $?"
+        echo "FAILED - Healthcheck for apps $my_app exited with a status of $?"
+        (( FAIL++ ))
     fi
   done
 
   if [ $FAIL -gt 0 ]; then
-      echo "FAIL"$FAIL
-  else
-      echo "All Apps with buildpack ${buildpack} have sucessfully restaged"
-      exit 0
+    exit 1
   fi
+
 }
 
+
+###### Main Logic
 
 function fn_trigger {
 
@@ -72,8 +75,6 @@ function fn_trigger {
 
 }
 
-
-# Main Logic
 case ${buildpack} in
     java_buildpack_offline)
       fn_trigger
