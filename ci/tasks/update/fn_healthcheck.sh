@@ -18,6 +18,7 @@ function fn_check_app_health {
 
         for x in ${app_instances[@]}; do
             if [[ ${x} == "RUNNING" ]]; then
+              echo ${app_id}":instance-state:"${x}
               let 'healthy_count++'
             fi
         done
@@ -33,3 +34,5 @@ function fn_check_app_health {
     exit 1
   fi
 }
+
+fn_check_app_health ${1}
