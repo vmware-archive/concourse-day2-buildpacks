@@ -42,8 +42,9 @@ function fn_restage_apps_with_buildpack {
 
   echo "Wating for Healthcheck Jobs to finish ..."
 
-  for job in $(jobs -p); do
-    wait $job || #let "FAIL+=1"
+  for my_job in $(jobs -p); do
+    echo "wait:$my_job"
+    wait $my_job #let "FAIL+=1"
   done
 
   if [ $FAIL -gt 0 ]; then
