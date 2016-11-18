@@ -26,9 +26,8 @@ resources:
 - name: concourse-day2-buildpacks
   type: git
   source:
-    uri: git@github.com:c0-ops/concourse-day2-buildpacks.git
+    uri: https://github.com/c0-ops/concourse-day2-buildpacks.git
     branch: master
-    private_key: {{githubsshkey}}
 
 - name: java-buildpack-release
   type: bosh-io-release
@@ -52,7 +51,7 @@ jobs:
   - task: update-buildpacks
     config:
       platform: linux
-      image: docker:///virtmerlin/deploy-worker
+      image: docker:///virtmerlin/c0-worker
       inputs:
         - name: concourse-day2-buildpacks
         - name: java-buildpack-release
@@ -70,15 +69,15 @@ jobs:
   plan:
   - aggregate:
     - get: concourse-day2-buildpacks
-      trigger: true
+      trigger: false
       passed: [update-buildpacks]
     - get: java-buildpack-release
-      trigger: true
+      trigger: false
       passed: [update-buildpacks]
   - task: test-buildpack-java
     config:
       platform: linux
-      image: docker:///virtmerlin/deploy-worker
+      image: docker:///virtmerlin/c0-worker
       inputs:
         - name: concourse-day2-buildpacks
         - name: java-buildpack-release
