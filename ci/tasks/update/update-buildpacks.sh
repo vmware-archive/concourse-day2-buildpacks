@@ -31,8 +31,8 @@ function fn_restage_apps_with_buildpack {
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
-      #app_name=$(cf curl /v2/apps/$x : jq .entity.name)
-      cf curl -X POST /v2/apps/$x/restage
+      cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
+      fn_check_app_health $x &
   done
 
 }
@@ -41,7 +41,7 @@ function fn_check_app_health {
 
   local app_id=${1}
   let 'timeout = 120'
-  sleep 3
+  sleep 30
 
   for (( x=0; x < $timeout; x++ )); do
 
