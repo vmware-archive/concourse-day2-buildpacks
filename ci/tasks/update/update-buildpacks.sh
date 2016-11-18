@@ -41,7 +41,7 @@ function fn_restage_apps_with_buildpack {
   done
 
   if [ $FAIL -gt 0 ]; then
-      exit 1
+      echo "FAIL"$FAIL
   else
       echo "All Apps with buildpack ${buildpack} have sucessfully restaged"
       exit 0
