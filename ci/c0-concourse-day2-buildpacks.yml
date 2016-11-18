@@ -2,16 +2,14 @@ groups:
 
 - name: all
   jobs:
-  - update-buildpacks
+  - update-buildpacks-java
   - test-buildpack-java
 
-- name: update
+- name: update-buildpacks-java
   jobs:
-  - update-buildpacks
-
-- name: test
-  jobs:
+  - update-buildpacks-java
   - test-buildpack-java
+
 
 resource_types:
 
@@ -71,10 +69,10 @@ jobs:
   - aggregate:
     - get: concourse-day2-buildpacks
       trigger: false
-      passed: [update-buildpacks]
+      passed: [update-buildpacks-java]
     - get: java-buildpack-release
       trigger: false
-      passed: [update-buildpacks]
+      passed: [update-buildpacks-java]
   - task: test-buildpack-java
     config:
       platform: linux
