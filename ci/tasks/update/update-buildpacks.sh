@@ -32,44 +32,11 @@ function fn_restage_apps_with_buildpack {
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
-      fn_check_app_health $x &
+      bash -c "source $PWD/concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh && fn_check_app_health $x" &
   done
 
 }
 
-function fn_check_app_health {
-
-  local app_id=${1}
-  let 'timeout = 120'
-  sleep 30
-
-  for (( x=0; x < $timeout; x++ )); do
-
-        declare -a app_instances
-        app_stage_state_cmd="cf curl /v2/apps/${app_id} | jq .entity.package_state | tr -d '\"'"
-        app_stage_state=$(eval $app_state_cmd)
-        app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
-        app_instances=$(eval ${app_instance_state_cmd})
-        let "ai_count = ${#app_instances[@]}"
-        let 'healthy_count = 0'
-
-        for x in ${app_instances[@]}; do
-            if [[ ${x} == "RUNNING" ]]; then
-              let 'healthy_count++'
-            fi
-        done
-
-        if [[ ${healthy_count} -eq ${ai_count} ]]; then
-          return 0
-        fi
-        sleep 1
-  done
-
-  if [[ ! ${healthy_count} -eq ${ai_count} ]]; then
-    echo "App Not Running" 1>&2
-    exit 1
-  fi
-}
 
 function fn_trigger {
 
