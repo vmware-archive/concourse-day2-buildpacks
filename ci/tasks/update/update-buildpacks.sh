@@ -31,8 +31,7 @@ function fn_restage_apps_with_buildpack {
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
-      echo "Restaging App GUID="$x" ..."
-      cf curl /v2/apps/$x -d '{state:STOPPED}'
+      #app_name=$(cf curl /v2/apps/$x : jq .entity.name)
       cf curl -X POST /v2/apps/$x/restage
   done
 
@@ -41,18 +40,35 @@ function fn_restage_apps_with_buildpack {
 function fn_check_app_health {
 
   local app_id=${1}
-  let timeout = 300
-
-  sleep 10
+  let 'timeout = 120'
+  sleep 3
 
   for (( x=0; x < $timeout; x++ )); do
-        app_state_cmd="cf curl /v2/apps/${app_id} | jq .entity.state | tr -d '\"'"
-        app_state=$(eval $app_state_cmd)
+
+        declare -a app_instances
         app_stage_state_cmd="cf curl /v2/apps/${app_id} | jq .entity.package_state | tr -d '\"'"
         app_stage_state=$(eval $app_state_cmd)
-        #if [[ ${app_state} != "STARTED" || ! (${app_stage_state} == "STAGED" || ${app_stage_state} == "PENDING" )]]
+        app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
+        app_instances=$(eval ${app_instance_state_cmd})
+        let "ai_count = ${#app_instances[@]}"
+        let 'healthy_count = 0'
+
+        for x in ${app_instances[@]}; do
+            if [[ ${x} == "RUNNING" ]]; then
+              let 'healthy_count++'
+            fi
+        done
+
+        if [[ ${healthy_count} -eq ${ai_count} ]]; then
+          return 0
+        fi
+        sleep 1
   done
 
+  if [[ ! ${healthy_count} -eq ${ai_count} ]]; then
+    echo "App Not Running" 1>&2
+    exit 1
+  fi
 }
 
 function fn_trigger {
@@ -61,6 +77,7 @@ function fn_trigger {
   echo "Will work on ... ${buildpack}"
   buildpack_id=$(fn_get_buildpack_id "${buildpack}")
   fn_restage_apps_with_buildpack "${buildpack_id}"
+  exit 1
 }
 
 
