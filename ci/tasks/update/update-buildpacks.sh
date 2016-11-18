@@ -21,12 +21,27 @@ function fn_get_buildpack_id {
    my_cmd="cf curl /v2/buildpacks | jq '.resources[] | select(.entity.name==\"${buildpack}\") | .' | jq .metadata.guid | tr -d '\"'"
    eval $my_cmd
 
+
+}
+
+function fn_restage_apps_with_buildpack {
+
+  local buildpack_id=${1}
+  declare -a apps
+  my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr '\"'"
+  apps=$(eval $my_cmd)
+  for x in ${apps[@]}; do
+      cf curl -X POST /v2/apps/$x/restage
+  done
+
 }
 # Main Login
 case ${buildpack} in
     java_buildpack_offline)
+      declare -a apps
       echo "Will work on ... ${buildpack}"
-      fn_get_buildpack_id "${buildpack}"
+      buildpack_id=$(fn_get_buildpack_id "${buildpack}")
+      fn_restage_apps_with_buildpack "${buildpack_id}"
       exit 1
       ;;
     *)
