@@ -10,6 +10,7 @@ function fn_check_app_health {
         declare -a app_instances
         #app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
         app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq -r 'keys[] as $k | [$k,(.[$k].state)] | @csv' | tr -d '\"'"
+        echo $app_instance_state_cmd
         let 'ai_count = 0'
         for y in $(eval ${app_instance_state_cmd}); do
                 (( ai_count++ ))
