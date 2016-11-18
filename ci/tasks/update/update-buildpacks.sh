@@ -13,4 +13,16 @@ cf login -u ${cf_user} -p ${cf_password} -o system -s system
 # list buildpacks
 cf buildpacks
 
-exit 1
+# Functions
+
+# Main Login
+case ${buildpack} in
+    java)
+      echo "Will work on java_buildpack_offline"
+      exit 1
+      ;;
+    *)
+      echo "BuildPack Not Instrumented!!!"
+      exit 1
+      ;;
+esac
