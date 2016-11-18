@@ -13,6 +13,11 @@ groups:
   jobs:
   - update-buildpacks-java
   - test-buildpack-java
+  - notify-operator
+  - update-buildpacks-prod
+
+- name: update-buildpacks-go
+  jobs:
   - update-buildpacks-go
   - test-buildpack-go
   - notify-operator
