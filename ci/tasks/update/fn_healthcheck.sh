@@ -9,7 +9,6 @@ function fn_check_app_health {
 
         #app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
         app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq -r 'keys[] as \$k | [\$k,(.[\$k].state)] | @csv' | tr -d '\"'"
-        echo $app_instance_state_cmd
         let 'ai_count = 0'
         for y in $(eval ${app_instance_state_cmd}); do
                 (( ai_count++ ))
@@ -23,8 +22,8 @@ function fn_check_app_health {
               echo ${app_id}":instance[${app_instance_id}]-state:"${app_instance_state}
               (( healthy_count++ ))
             else
-              echo ${app_id}":instance[${app_instance_id}]-state:"${app_instance_state}
-              echo "Not Healthy Yet...."
+              echo "${app_id}:instance[${app_instance_id}]-state:${app_instance_state}"
+              echo "${app_id} :instance[${app_instance_id}] Not Healthy Yet...."
             fi
         done
 
