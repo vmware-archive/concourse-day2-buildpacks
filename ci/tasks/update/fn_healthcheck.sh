@@ -1,19 +1,22 @@
 #!/bin/bash
+# Checks for restaged apps to enter a running state
+
+set -e
+
 function fn_check_app_health {
 
   local app_id=${1}
-  let 'timeout = 300'
+  timeout=0
   sleep 3
 
   for (( x=0; x < $timeout; x++ )); do
 
-        #app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq .[].state | tr -d '\"'"
         app_instance_state_cmd="cf curl /v2/apps/${app_id}/stats | jq -r 'keys[] as \$k | [\$k,(.[\$k].state)] | @csv' | tr -d '\"'"
-        let 'ai_count = 0'
+        ai_count=0
         for y in $(eval ${app_instance_state_cmd}); do
                 (( ai_count++ ))
         done
-        let 'healthy_count = 0'
+        healthy_count=0
 
         for x in $(eval ${app_instance_state_cmd}); do
             app_instance_id=$(echo $x | awk -F "," '{print$1}')
