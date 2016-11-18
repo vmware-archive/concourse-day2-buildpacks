@@ -6,7 +6,7 @@ set -e
 function fn_check_app_health {
 
   local app_id=${1}
-  timeout=0
+  timeout=600
   sleep 3
 
   for (( x=0; x < $timeout; x++ )); do
