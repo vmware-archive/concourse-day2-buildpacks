@@ -6,21 +6,21 @@ set -e
 sudo wget -O /tmp/cfcli.deb "https://cli.run.pivotal.io/stable?release=debian64&version=6.22.2&source=github-rel"
 sudo dpkg -i /tmp/cfcli.deb && apt-get install -f
 
-# log into CF
-cf api ${cf_api} --skip-ssl-validation
-cf login -u ${cf_user} -p ${cf_password} -o system -s system
-
-# list buildpacks
-cf buildpacks
-
 # Functions
+
+function fn_auth_cli {
+
+  cf api ${cf_api} --skip-ssl-validation
+  cf login -u ${cf_user} -p ${cf_password} -o system -s system
+
+}
+
 function fn_get_buildpack_id {
 
    local buildpack=${1}
 
    my_cmd="cf curl /v2/buildpacks | jq '.resources[] | select(.entity.name==\"${buildpack}\") | .' | jq .metadata.guid | tr -d '\"'"
    eval $my_cmd
-
 
 }
 
@@ -42,9 +42,12 @@ function fn_trigger {
 
   declare -a apps
   echo "Will work on ... ${buildpack}"
+  fn_auth_cli
   buildpack_id=$(fn_get_buildpack_id "${buildpack}")
   fn_restage_apps_with_buildpack "${buildpack_id}"
+
   exit 1
+
 }
 
 

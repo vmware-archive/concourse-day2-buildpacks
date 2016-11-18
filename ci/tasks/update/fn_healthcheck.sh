@@ -1,5 +1,13 @@
 #!/bin/bash
 
+
+function fn_auth_cli {
+
+  cf api ${cf_api} --skip-ssl-validation
+  cf login -u ${cf_user} -p ${cf_password} -o system -s system
+
+}
+
 function fn_check_app_health {
 
   local app_id=${1}
@@ -35,4 +43,5 @@ function fn_check_app_health {
   fi
 }
 
+fn_auth_cli
 fn_check_app_health ${1}
