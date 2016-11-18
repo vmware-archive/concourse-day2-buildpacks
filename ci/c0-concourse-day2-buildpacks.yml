@@ -4,11 +4,19 @@ groups:
   jobs:
   - update-buildpacks-java
   - test-buildpack-java
+  - update-buildpacks-go
+  - test-buildpack-go
+  - notify-operator
+  - update-buildpacks-prod
 
 - name: update-buildpacks-java
   jobs:
   - update-buildpacks-java
   - test-buildpack-java
+  - update-buildpacks-go
+  - test-buildpack-go
+  - notify-operator
+  - update-buildpacks-prod
 
 
 resource_types:
@@ -32,6 +40,12 @@ resources:
   check_every: 2h
   source:
     repository: cloudfoundry/java-buildpack-release
+
+- name: go-buildpack-release
+  type: bosh-io-release
+  check_every: 2h
+  source:
+    repository: cloudfoundry/go-buildpack-release
 
 
 jobs:
@@ -82,3 +96,74 @@ jobs:
         - name: java-buildpack-release
       run:
         path: concourse-day2-buildpacks/ci/tasks/test/test-buildpack-java.sh
+
+- name: update-buildpacks-go
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+    - get: go-buildpack-release
+      trigger: true
+  - task: update-buildpacks
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: go-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
+      params:
+        buildpack: "go_buildpack"
+        cf_api: {{cf_api}}
+        cf_user: {{cf_user}}
+        cf_password: {{cf_password}}
+
+- name: test-buildpack-go
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+      passed: [update-buildpacks-go]
+    - get: go-buildpack-release
+      trigger: false
+      passed: [update-buildpacks-go]
+  - task: test-buildpack-go
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: go-buildpack-release
+
+- name: notify-operator
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+    - aggregate:
+      - get: java-buildpack-release
+        trigger: true
+        passed: [test-buildpack-java]
+      - get: go-buildpack-release
+        trigger: true
+        passed: [test-buildpack-go]
+
+- name: update-buildpacks-prod
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+    - aggregate:
+      - get: java-buildpack-release
+        trigger: true
+        passed: [notify-operator]
+      - get: go-buildpack-release
+        trigger: true
+        passed: [notify-operator]

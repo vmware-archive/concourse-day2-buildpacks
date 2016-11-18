@@ -43,7 +43,12 @@ case ${buildpack} in
       echo "Will work on ... ${buildpack}"
       buildpack_id=$(fn_get_buildpack_id "${buildpack}")
       fn_restage_apps_with_buildpack "${buildpack_id}"
-      exit 1
+      ;;
+    go_buildpack)
+      declare -a apps
+      echo "Will work on ... ${buildpack}"
+      buildpack_id=$(fn_get_buildpack_id "${buildpack}")
+      fn_restage_apps_with_buildpack "${buildpack_id}"
       ;;
     *)
       echo "BuildPack Not Instrumented!!!"
