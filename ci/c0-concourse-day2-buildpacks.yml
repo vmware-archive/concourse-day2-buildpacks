@@ -6,6 +6,8 @@ groups:
   - test-buildpack-java
   - update-buildpacks-go
   - test-buildpack-go
+  - update-buildpacks-nodejs
+  - test-buildpack-nodejs
   - notify-operator
   - update-buildpacks-prod
 
@@ -20,6 +22,13 @@ groups:
   jobs:
   - update-buildpacks-go
   - test-buildpack-go
+  - notify-operator
+  - update-buildpacks-prod
+
+- name: update-buildpacks-nodejs
+  jobs:
+  - update-buildpacks-nodejs
+  - test-buildpack-nodejs
   - notify-operator
   - update-buildpacks-prod
 
@@ -47,6 +56,12 @@ resources:
     repository: cloudfoundry/java-buildpack-release
 
 - name: go-buildpack-release
+  type: bosh-io-release
+  check_every: 2h
+  source:
+    repository: cloudfoundry/go-buildpack-release
+
+- name: nodejs-buildpack-release
   type: bosh-io-release
   check_every: 2h
   source:
@@ -145,6 +160,51 @@ jobs:
         - name: concourse-day2-buildpacks
         - name: go-buildpack-release
 
+- name: update-buildpacks-nodejs
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+    - get: nodejs-buildpack-release
+      trigger: true
+  - task: update-buildpacks
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: nodejs-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
+      params:
+        buildpack: "nodejs_buildpack"
+        cf_api: {{cf_api}}
+        cf_user: {{cf_user}}
+        cf_password: {{cf_password}}
+
+- name: test-buildpack-nodejs
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+      passed: [update-buildpacks-nodejs]
+    - get: nodejs-buildpack-release
+      trigger: true
+      passed: [update-buildpacks-nodejs]
+  - task: test-buildpack-nodejs
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: nodejs-buildpack-release
+
 - name: notify-operator
   serial: true
   max_in_flight: 1
@@ -157,6 +217,9 @@ jobs:
       - get: go-buildpack-release
         trigger: true
         passed: [test-buildpack-go]
+      - get: nodejs-buildpack-release
+        trigger: true
+        passed: [test-buildpack-nodejs]
 
 - name: update-buildpacks-prod
   serial: true
@@ -168,5 +231,8 @@ jobs:
         trigger: true
         passed: [notify-operator]
       - get: go-buildpack-release
+        trigger: true
+        passed: [notify-operator]
+      - get: nodejs-buildpack-release
         trigger: true
         passed: [notify-operator]

@@ -36,19 +36,27 @@ function fn_restage_apps_with_buildpack {
   done
 
 }
-# Main Login
+
+function fn_trigger {
+
+  declare -a apps
+  echo "Will work on ... ${buildpack}"
+  buildpack_id=$(fn_get_buildpack_id "${buildpack}")
+  fn_restage_apps_with_buildpack "${buildpack_id}"
+}
+
+
+# Main Logic
 case ${buildpack} in
     java_buildpack_offline)
       declare -a apps
-      echo "Will work on ... ${buildpack}"
-      buildpack_id=$(fn_get_buildpack_id "${buildpack}")
-      fn_restage_apps_with_buildpack "${buildpack_id}"
+      fn_trigger
       ;;
     go_buildpack)
-      declare -a apps
-      echo "Will work on ... ${buildpack}"
-      buildpack_id=$(fn_get_buildpack_id "${buildpack}")
-      fn_restage_apps_with_buildpack "${buildpack_id}"
+      fn_trigger
+      ;;
+    nodejs_buildpack)
+      fn_trigger
       ;;
     *)
       echo "BuildPack Not Instrumented!!!"
