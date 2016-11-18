@@ -45,6 +45,7 @@ function fn_restage_apps_with_buildpack {
   else
       echo "All Apps with buildpack ${buildpack} have sucessfully restaged"
       exit 0
+  fi
 }
 
 
