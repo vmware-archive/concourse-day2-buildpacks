@@ -32,7 +32,25 @@ function fn_restage_apps_with_buildpack {
   apps=$(eval $my_cmd)
   for x in ${apps[@]}; do
       echo "Restaging App GUID="$x" ..."
+      cf curl /v2/apps/$x -d '{state:STOPPED}'
       cf curl -X POST /v2/apps/$x/restage
+  done
+
+}
+
+function fn_check_app_health {
+
+  local app_id=${1}
+  let timeout = 300
+
+  sleep 10
+
+  for (( x=0; x < $timeout; x++ )); do
+        app_state_cmd="cf curl /v2/apps/${app_id} | jq .entity.state | tr -d '\"'"
+        app_state=$(eval $app_state_cmd)
+        app_stage_state_cmd="cf curl /v2/apps/${app_id} | jq .entity.package_state | tr -d '\"'"
+        app_stage_state=$(eval $app_state_cmd)
+        #if [[ ${app_state} != "STARTED" || ! (${app_stage_state} == "STAGED" || ${app_stage_state} == "PENDING" )]]
   done
 
 }
@@ -49,7 +67,6 @@ function fn_trigger {
 # Main Logic
 case ${buildpack} in
     java_buildpack_offline)
-      declare -a apps
       fn_trigger
       ;;
     go_buildpack)
@@ -59,7 +76,7 @@ case ${buildpack} in
       fn_trigger
       ;;
     *)
-      echo "BuildPack Not Instrumented!!!"
+      echo "BuildPack ${buildpack} Not Yet Instrumented!!!"
       exit 1
       ;;
 esac
