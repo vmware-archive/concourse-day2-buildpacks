@@ -14,11 +14,19 @@ cf login -u ${cf_user} -p ${cf_password} -o system -s system
 cf buildpacks
 
 # Functions
+function fn_get_buildpack_id {
 
+   local buildpack=${1}
+
+   my_cmd="cf curl /v2/buildpacks | jq '.resources[] | select(.entity.name==\"${buildpack}\") | .' | jq .metadata.guid | tr -d '\"'"
+   eval $my_cmd
+
+}
 # Main Login
 case ${buildpack} in
-    java)
-      echo "Will work on java_buildpack_offline"
+    java_buildpack_offline)
+      echo "Will work on ... ${buildpack}"
+      fn_get_buildpack_id "${buildpack}"
       exit 1
       ;;
     *)

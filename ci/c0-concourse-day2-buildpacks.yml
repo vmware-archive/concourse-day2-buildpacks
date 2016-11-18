@@ -56,7 +56,7 @@ jobs:
       run:
         path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
       params:
-        buildpack: "java"
+        buildpack: "java_buildpack_offline"
         cf_api: {{cf_api}}
         cf_user: {{cf_user}}
         cf_password: {{cf_password}}
