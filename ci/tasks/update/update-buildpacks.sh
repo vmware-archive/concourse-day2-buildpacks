@@ -34,7 +34,7 @@ function fn_restage_apps_with_buildpack {
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1
       $PWD/concourse-day2-buildpacks/ci/tasks/update/fn_healthcheck.sh $x &
   done
-
+  echo $(jobs -p)
 }
 
 
