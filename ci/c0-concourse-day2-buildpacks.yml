@@ -41,7 +41,32 @@ resource_types:
     repository: pivotalcf/pivnet-resource
     tag: latest-final
 
+- name: email
+  type: docker-image
+  source:
+    repository: pcfseceng/email-resource
+
 resources:
+
+- name: pipeline-run-id
+  type: semver
+  source:
+    bucket: {{aws_s3_bucket_name}}
+    key: buildpack_trigger_run_id
+    initial_version: 1.0.0
+    access_key_id: {{aws_s3_key}}
+    secret_access_key: {{aws_s3_secret}}
+
+- name: notify-operator
+  type: email
+  source:
+    smtp:
+      host: {{smtp_host}}
+      port: {{smtp_port}}
+      username: {{smtp_username}}
+      password: {{smtp_password}}
+    from: c0-day2-buildpacks@customer0.net
+    to: [ "mglynn@pivotal.io" ]
 
 - name: concourse-day2-buildpacks
   type: git
@@ -67,6 +92,8 @@ resources:
   source:
     repository: cloudfoundry/go-buildpack-release
 jobs:
+
+#### Java Offline Buildpack
 - name: update-buildpacks-java
   serial: true
   max_in_flight: 1
@@ -77,6 +104,10 @@ jobs:
       trigger: false
     - get: java-buildpack-release
       trigger: true
+    - get: pipeline-run-id
+      params: {bump: major}
+  - put: pipeline-run-id
+    params: {file: pipeline-run-id/number}
   - task: update-buildpacks
     config:
       platform: linux
@@ -104,6 +135,9 @@ jobs:
     - get: java-buildpack-release
       trigger: true
       passed: [update-buildpacks-java]
+    - get: pipeline-run-id
+      passed: [update-buildpacks-java]
+      trigger: true
   - task: test-buildpack-java
     config:
       platform: linux
@@ -119,6 +153,7 @@ jobs:
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
 
+#### Golang Buildpack
 - name: update-buildpacks-go
   serial: true
   max_in_flight: 1
@@ -143,7 +178,7 @@ jobs:
         sandbox_cf_api: {{sandbox_cf_api}}
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
-
+        pivnet_api_token: {{pivnet_api_token}}
 - name: test-buildpack-go
   serial: true
   max_in_flight: 1
@@ -163,7 +198,15 @@ jobs:
       inputs:
         - name: concourse-day2-buildpacks
         - name: go-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/test/test-buildpacks.sh
+      params:
+        buildpack: "java_buildpack_offline"
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
 
+#### Node Buildpack
 - name: update-buildpacks-nodejs
   serial: true
   max_in_flight: 1
@@ -188,7 +231,7 @@ jobs:
         sandbox_cf_api: {{sandbox_cf_api}}
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
-
+        pivnet_api_token: {{pivnet_api_token}}
 - name: test-buildpack-nodejs
   serial: true
   max_in_flight: 1
@@ -208,33 +251,30 @@ jobs:
       inputs:
         - name: concourse-day2-buildpacks
         - name: nodejs-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
+      params:
+        buildpack: "nodejs_buildpack"
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
+        pivnet_api_token: {{pivnet_api_token}}
+
+# Notify Operator
 - name: notify-operator
   serial: true
   max_in_flight: 1
   serial_groups: [full]
   plan:
-    - aggregate:
-      - get: java-buildpack-release
-        trigger: true
-        passed: [test-buildpack-java]
-      - get: go-buildpack-release
-        trigger: true
-        passed: [test-buildpack-go]
-      - get: nodejs-buildpack-release
-        trigger: true
-        passed: [test-buildpack-nodejs]
+    - get: pipeline-run-id
+      trigger: true
+      passed: [test-buildpack-java]
+
+# Apply to Prod if so desired
 - name: update-buildpacks-prod
   serial: true
   max_in_flight: 1
   serial_groups: [full]
   plan:
-    - aggregate:
-      - get: java-buildpack-release
-        trigger: true
-        passed: [notify-operator]
-      - get: go-buildpack-release
-        trigger: true
-        passed: [notify-operator]
-      - get: nodejs-buildpack-release
-        trigger: true
-        passed: [notify-operator]
+    - get: pipeline-run-id
+      passed: [notify-operator]
