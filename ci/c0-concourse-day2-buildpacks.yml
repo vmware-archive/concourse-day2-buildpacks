@@ -69,7 +69,6 @@ resources:
 
 
 jobs:
-
 - name: update-buildpacks-java
   serial: true
   max_in_flight: 1
@@ -91,10 +90,9 @@ jobs:
         path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
       params:
         buildpack: "java_buildpack_offline"
-        cf_api: {{cf_api}}
-        cf_user: {{cf_user}}
-        cf_password: {{cf_password}}
-
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
 - name: test-buildpack-java
   serial: true
   max_in_flight: 1
@@ -114,6 +112,13 @@ jobs:
       inputs:
         - name: concourse-day2-buildpacks
         - name: java-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/test/test-buildpacks.sh
+      params:
+        buildpack: "java_buildpack_offline"
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
 
 - name: update-buildpacks-go
   serial: true
@@ -136,9 +141,9 @@ jobs:
         path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
       params:
         buildpack: "go_buildpack"
-        cf_api: {{cf_api}}
-        cf_user: {{cf_user}}
-        cf_password: {{cf_password}}
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
 
 - name: test-buildpack-go
   serial: true
@@ -181,9 +186,9 @@ jobs:
         path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
       params:
         buildpack: "nodejs_buildpack"
-        cf_api: {{cf_api}}
-        cf_user: {{cf_user}}
-        cf_password: {{cf_password}}
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
 
 - name: test-buildpack-nodejs
   serial: true

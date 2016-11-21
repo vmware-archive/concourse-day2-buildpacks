@@ -1,3 +1,4 @@
+#!/bin/bash
 set -e
 
 # install cf cli
