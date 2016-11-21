@@ -12,7 +12,7 @@ sudo dpkg -i /tmp/cfcli.deb && apt-get install -f  > /dev/null 2>&1
 function fn_auth_cli {
 
   cf api ${sandbox_cf_api} --skip-ssl-validation > /dev/null 2>&1
-  cf login -u ${sandbox_cf_api} -p ${sandbox_cf_api} -o system -s system > /dev/null 2>&1
+  cf login -u ${sandbox_cf_user} -p ${sandbox_cf_password} -o system -s system > /dev/null 2>&1
 
 }
 
