@@ -3,4 +3,6 @@
 set -e
 
 
+echo "BLAH"
+
 exit 1

@@ -57,6 +57,13 @@ resources:
     access_key_id: {{aws_s3_key}}
     secret_access_key: {{aws_s3_secret}}
 
+- name: pipeline-triggered-buildpack
+  type: s3
+  source:
+    bucket: {{aws_s3_bucket_name}}
+    access_key_id: {{aws_s3_key}}
+    secret_access_key: {{aws_s3_secret}}
+
 - name: notify-operator
   type: email
   source:
@@ -266,9 +273,25 @@ jobs:
   max_in_flight: 1
   serial_groups: [full]
   plan:
-    - get: pipeline-run-id
-      trigger: true
-      passed: [test-buildpack-java]
+  - get: pipeline-run-id
+    trigger: true
+    passed: [test-buildpack-java]
+  - get: concourse-day2-buildpacks
+    trigger: false
+  - task: notify-operator
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+      outputs:
+        - name: run-info
+      run:
+       path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
+#  - put: notify-operator
+#    params:
+#      subject: "c0-Day2-Pipeline Triggered Run"
+#      body: "BLAH"
 
 # Apply to Prod if so desired
 - name: update-buildpacks-prod
