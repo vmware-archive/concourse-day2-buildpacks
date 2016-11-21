@@ -88,6 +88,7 @@ function fn_trigger {
 case ${buildpack} in
     java_buildpack_offline)
       fn_trigger
+      exit 1
       ;;
     go_buildpack)
       fn_trigger
