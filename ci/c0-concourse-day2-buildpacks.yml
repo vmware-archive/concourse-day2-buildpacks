@@ -93,6 +93,7 @@ jobs:
         sandbox_cf_api: {{sandbox_cf_api}}
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
+        pivnet_api_token: {{pivnet_api_token}}
 - name: test-buildpack-java
   serial: true
   max_in_flight: 1

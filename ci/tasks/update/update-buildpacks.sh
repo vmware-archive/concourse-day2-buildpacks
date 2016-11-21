@@ -26,6 +26,7 @@ function fn_get_buildpack_id {
 
 function fn_get_pivent_buildpack {
 
+  echo "Getting ${buildpack} version:${bp_version} from pivnet"
 
   local PIVNET_EULA_URL=$(echo ${1} | sed 's/\/product_files//g')
   local PIVNET_DOWNLOAD_URL=${2}
