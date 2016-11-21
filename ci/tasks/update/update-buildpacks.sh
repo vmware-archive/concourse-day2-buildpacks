@@ -83,7 +83,8 @@ function fn_trigger {
   buildpack_id=$(fn_get_buildpack_id "${buildpack}")
   fn_update_buildpack
 
-  echo "${buildpack}" > run-info/buildpack
+  run_id=$(cat pipeline-run-id/version)
+  echo "${buildpack}" > run-info/buildpack-${run_id}.id
 
 }
 
@@ -91,6 +92,7 @@ function fn_trigger {
 case ${buildpack} in
     java_buildpack_offline)
       fn_trigger
+      exit 1
       ;;
     go_buildpack)
       fn_trigger
