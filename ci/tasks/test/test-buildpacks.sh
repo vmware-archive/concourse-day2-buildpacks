@@ -64,7 +64,7 @@ function fn_restage_apps_with_buildpack {
 function fn_trigger {
 
   declare -a apps
-  echo "Will work on ... ${buildpack}"
+  echo "Will work on testing all apps pushed with ... ${buildpack}"
   fn_auth_cli
   buildpack_id=$(fn_get_buildpack_id "${buildpack}")
   fn_restage_apps_with_buildpack "${buildpack_id}"
