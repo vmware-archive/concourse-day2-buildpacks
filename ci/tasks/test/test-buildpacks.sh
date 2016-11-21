@@ -16,11 +16,11 @@ function fn_auth_cli {
 
 }
 
-function fn_get_buildpack_id {
+function fn_get_venrable_buildpack_id {
 
    local buildpack=${1}
 
-   my_cmd="cf curl /v2/buildpacks | jq '.resources[] | select(.entity.name==\"${buildpack}\") | .' | jq .metadata.guid | tr -d '\"'"
+   my_cmd="cf curl /v2/buildpacks | jq '.resources[] | select(.entity.name==\"${buildpack}_venerable\") | .' | jq .metadata.guid | tr -d '\"'"
    eval $my_cmd
 
 }
@@ -66,7 +66,7 @@ function fn_trigger {
   declare -a apps
   echo "Will work on testing all apps pushed with ... ${buildpack}"
   fn_auth_cli
-  buildpack_id=$(fn_get_buildpack_id "${buildpack}")
+  buildpack_id=$(fn_get_venrable_buildpack_id "${buildpack}")
   fn_restage_apps_with_buildpack "${buildpack_id}"
 
 }
