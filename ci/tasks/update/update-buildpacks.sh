@@ -113,7 +113,6 @@ function fn_trigger {
 
   run_id=$(cat pipeline-run-id/version)
   echo "${buildpack}" > run-info/buildpack-${run_id}.id
-  exit 1
 
 }
 

@@ -143,8 +143,7 @@ jobs:
         channel: '#testnotifications'
         text: |
           Job ${BUILD_JOB_NAME} failed!!!
-          Check here for more details ${ATC_EXTERNAL_URL}/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_ID}
-
+          Check here for more details ${ATC_EXTERNAL_URL}/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
   - put: pipeline-triggered-buildpack
     params:
       file: run-info/buildpack-*.id
@@ -178,6 +177,13 @@ jobs:
         sandbox_cf_api: {{sandbox_cf_api}}
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
+    on_failure:
+      put: notify-operator
+      params:
+        channel: '#testnotifications'
+        text: |
+          Job ${BUILD_JOB_NAME} failed!!!
+          Check here for more details ${ATC_EXTERNAL_URL}/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
 # Notify Operator
 - name: notify-operator-java
   serial: true
@@ -202,6 +208,21 @@ jobs:
         - name: run-info
       run:
        path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
+    on_failure:
+      put: notify-operator
+      params:
+        channel: '#testnotifications'
+        text: |
+          Job ${BUILD_JOB_NAME} failed!!!
+          Check here for more details ${ATC_EXTERNAL_URL}/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+    on_success:
+      put: notify-operator
+      params:
+        channel: '#testnotifications'
+        text: |
+          :smiling_imp: Job ${BUILD_JOB_NAME} SUCCEEDED!!!
+          Check here for more details ${ATC_EXTERNAL_URL}/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+
 # Apply to Prod if so desired
 - name: update-buildpacks-prod-java
   serial: true
