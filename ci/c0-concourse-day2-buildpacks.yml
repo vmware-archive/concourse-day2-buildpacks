@@ -27,10 +27,10 @@ groups:
 
 - name: update-buildpacks-nodejs
   jobs:
-#  - update-buildpacks-nodejs
-#  - test-buildpack-nodejs
-#  - notify-operator
-#  - update-buildpacks-prod
+  - update-buildpacks-nodejs
+  - test-buildpack-nodejs
+  - notify-operator-nodejs
+  - update-buildpacks-nodejs
 
 
 resource_types:
@@ -349,6 +349,132 @@ jobs:
        path: concourse-day2-buildpacks/ci/tasks/prod/update-buildpacks-prod.sh
       params:
         buildpack: "go_buildpack"
+        prod_cf_api: {{sandbox_cf_api}}
+        prod_cf_user: {{sandbox_cf_user}}
+        prod_cf_password: {{sandbox_cf_password}}
+        pivnet_api_token: {{pivnet_api_token}}
+
+################################
+####   Node Buildpack     ####
+################################
+- name: update-buildpacks-nodejs
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+    - get: nodejs-buildpack-release
+      trigger: true
+    - get: pipeline-run-id
+      params: {bump: major}
+  - put: pipeline-run-id
+    params: {file: pipeline-run-id/number}
+  - task: update-buildpacks
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: nodejs-buildpack-release
+        - name: pipeline-run-id
+      outputs:
+        - name: run-info
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
+      params:
+        buildpack: "nodejs_buildpack"
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
+        pivnet_api_token: {{pivnet_api_token}}
+  - put: pipeline-triggered-buildpack
+    params:
+      file: run-info/buildpack-*.id
+- name: test-buildpack-nodejs
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - aggregate:
+    - get: concourse-day2-buildpacks
+      trigger: false
+    - get: nodejs-buildpack-release
+      trigger: true
+      passed: [update-buildpacks-nodejs]
+    - get: pipeline-run-id
+      passed: [update-buildpacks-nodejs]
+      trigger: true
+    - get: pipeline-triggered-buildpack
+      passed: [update-buildpacks-nodejs]
+  - task: test-buildpack-java
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: nodejs-buildpack-release
+      run:
+        path: concourse-day2-buildpacks/ci/tasks/test/test-buildpacks.sh
+      params:
+        buildpack: "nodejs_buildpack"
+        sandbox_cf_api: {{sandbox_cf_api}}
+        sandbox_cf_user: {{sandbox_cf_user}}
+        sandbox_cf_password: {{sandbox_cf_password}}
+# Notify Operator
+- name: notify-operator-nodejs
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - get: pipeline-run-id
+    trigger: true
+    passed: ["test-buildpack-nodejs"]
+  - get: concourse-day2-buildpacks
+    trigger: false
+  - get: pipeline-triggered-buildpack
+    passed: ["test-buildpack-nodejs"]
+  - task: notify-operator
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: pipeline-triggered-buildpack
+      outputs:
+        - name: run-info
+      run:
+       path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
+  - put: notify-operator
+    params:
+      subject: run-info/subject
+      body: run-info/body
+# Apply to Prod if so desired
+- name: update-buildpacks-prod-nodejs
+  serial: true
+  max_in_flight: 1
+  serial_groups: [full]
+  plan:
+  - get: pipeline-run-id
+    passed: [notify-operator-nodejs]
+    trigger: true
+  - get: pipeline-triggered-buildpack
+    passed: [notify-operator-nodejs]
+  - get: concourse-day2-buildpacks
+  - task: update-buildpacks-prod-java
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: pipeline-triggered-buildpack
+      outputs:
+        - name: run-info
+      run:
+       path: concourse-day2-buildpacks/ci/tasks/prod/update-buildpacks-prod.sh
+      params:
+        buildpack: "nodejs_buildpack"
         prod_cf_api: {{sandbox_cf_api}}
         prod_cf_user: {{sandbox_cf_user}}
         prod_cf_password: {{sandbox_cf_password}}
