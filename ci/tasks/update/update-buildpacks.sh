@@ -54,6 +54,16 @@ function fn_update_buildpack {
 
   pivnet_q_cmd="curl -s https://network.pivotal.io/api/v2/products/buildpacks/releases | jq .releases[] | jq '. | select(contains({release_notes_url: \"${bp_release_string}\"})) | select(contains({release_notes_url: \"${bp_version}\"})) | ._links.product_files.href'"
 
+  if [[ $(eval ${pivnet_q_cmd}) == "" ]]; then
+      echo "Version ${bp_version} not found ... will grab latest"
+      pivnet_q_cmd="curl -s https://network.pivotal.io/api/v2/products/buildpacks/releases | jq .releases[] | jq '. | select(contains({release_notes_url: \"${bp_release_string}\"})) | ._links.product_files.href' | sort | tail -1"
+  fi
+
+  if [[ $(eval ${pivnet_q_cmd}) == "" ]]; then
+      echo "I cant find a good version to download"
+      exit 1
+  fi
+
   for pivent_api_response in $(eval ${pivnet_q_cmd}); do
       pivnet_prod_files=$(echo $pivent_api_response | tr -d '"')
       echo $pivnet_prod_files
@@ -69,7 +79,7 @@ function fn_update_buildpack {
   fi
 
   if [[ $pivnet_download_url == "" ]]; then
-    echo "Cant find URL to download buildpack fro pivnet API!!!!!"
+    echo "Cant find URL to download buildpack for pivnet API!!!!!"
     exit 1
   fi
 
