@@ -35,6 +35,13 @@ function fn_restage_apps_with_buildpack {
   declare -a apps
   my_cmd="cf curl /v2/apps | jq '.resources[] | select(.entity.detected_buildpack_guid==\"${buildpack_id}\") | .metadata.guid' | tr -d '\"'"
   apps=$(eval $my_cmd)
+
+  if [[ $apps == "" ]]; then
+      echo "No Apps found to restage for bpid=${buildpack_id},  pipeline cannot validate this buildpack"
+      echo "Look for apps requiring buildpack=${buildpack}, and re-stage them to re-run the pipeline"
+      exit 1
+  fi
+
   for x in ${apps[@]}; do
       echo "Restaging ${x}"
       cf curl -X POST /v2/apps/$x/restage > /dev/null 2>&1

@@ -24,7 +24,7 @@ function fn_get_buildpack_id {
 
 }
 
-function fn_get_pivent_buildpack {
+function fn_get_pivnet_buildpack {
 
   echo "Getting ${buildpack} version:${bp_version} from pivnet"
 
@@ -83,7 +83,7 @@ function fn_update_buildpack {
     exit 1
   fi
 
-  fn_get_pivent_buildpack "${pivnet_prod_files}" "${pivnet_download_url}" "${bp_version}"
+  fn_get_pivnet_buildpack "${pivnet_prod_files}" "${pivnet_download_url}" "${bp_version}"
 
     if [[ $(cf buildpacks | grep "${buildpack}_venerable" | wc -l) -gt 0 ]]; then
       cf delete-buildpack "${buildpack}_venerable" -f
@@ -91,7 +91,7 @@ function fn_update_buildpack {
 
 
   cf rename-buildpack ${buildpack} "${buildpack}_venerable"
-  cf update-buildpack "${buildpack}_venerable"
+  cf update-buildpack "${buildpack}_venerable"  --disable
 
 
   if [[ ${bp_position} == "" ]]; then
