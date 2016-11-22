@@ -79,8 +79,10 @@ function fn_update_buildpack {
       cf delete-buildpack "${buildpack}_venerable" -f
     fi
 
+  set +e
   cf rename-buildpack ${buildpack} "${buildpack}_venerable" || echo "Buildpack Missing ... will skip rename and insert at highest avail order"
-  cf update-buildpack "${buildpack}_venerable" --disable
+  cf update-buildpack "${buildpack}_venerable" --disable || echo "..."
+  set -e
 
   if [[ ${bp_position} == "" ]]; then
     let "bp_position=$(cf buildpacks | grep zip | awk '{print$2}' | sort | tail -1) + 1"
