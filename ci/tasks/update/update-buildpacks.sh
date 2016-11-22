@@ -56,11 +56,22 @@ function fn_update_buildpack {
 
   for pivent_api_response in $(eval ${pivnet_q_cmd}); do
       pivnet_prod_files=$(echo $pivent_api_response | tr -d '"')
-      echo $
+      echo $pivnet_prod_files
   done
 
   pivnet_download_url_cmd="curl -s ${pivnet_prod_files} | jq .product_files[] | jq '. | select(contains({aws_object_key: \"$(echo ${buildpack} | tr "_" "-")\"})) | ._links.download.href'"
   pivnet_download_url=$(eval ${pivnet_download_url_cmd} | tr -d '"')
+
+  if [[ $pivnet_download_url != *"network.pivotal.io/api/v2/products/buildpacks/releases"* ]]; then
+    echo "Couldnt find buildpack with string $(echo ${buildpack} | tr "_" "-"), will attempt ${buildpack} ..."
+    pivnet_download_url_cmd="curl -s ${pivnet_prod_files} | jq .product_files[] | jq '. | select(contains({aws_object_key: \"$(echo ${buildpack})\"})) | ._links.download.href'"
+    pivnet_download_url=$(eval ${pivnet_download_url_cmd} | tr -d '"')
+  fi
+
+  if [[ $pivnet_download_url == "" ]]; then
+    echo "Cant find URL to download buildpack fro pivnet API!!!!!"
+    exit 1
+  fi
 
   fn_get_pivent_buildpack "${pivnet_prod_files}" "${pivnet_download_url}" "${bp_version}"
 
