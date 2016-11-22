@@ -61,7 +61,7 @@ resources:
   type: s3
   source:
     bucket: {{aws_s3_bucket_name}}
-    regexp: triggered_runs/(.*).id
+    regexp: triggered_runs/buildpack-(.*).id
     access_key_id: {{aws_s3_key}}
     secret_access_key: {{aws_s3_secret}}
 
@@ -99,8 +99,9 @@ resources:
   check_every: 2h
   source:
     repository: cloudfoundry/go-buildpack-release
-jobs:
 
+
+jobs:
 #### Java Offline Buildpack
 - name: update-buildpacks-java
   serial: true
@@ -136,7 +137,7 @@ jobs:
         pivnet_api_token: {{pivnet_api_token}}
   - put: pipeline-triggered-buildpack
     params:
-      file: run-info/buildpack-(*).id
+      file: run-info/buildpack-*.id
 - name: test-buildpack-java
   serial: true
   max_in_flight: 1
@@ -152,6 +153,7 @@ jobs:
     - get: pipeline-run-id
       passed: [update-buildpacks-java]
       trigger: true
+    - get: pipeline-triggered-buildpack
   - task: test-buildpack-java
     config:
       platform: linux
@@ -285,20 +287,22 @@ jobs:
     passed: [test-buildpack-java]
   - get: concourse-day2-buildpacks
     trigger: false
+  - get: pipeline-triggered-buildpack
   - task: notify-operator
     config:
       platform: linux
       image: docker:///virtmerlin/c0-worker
       inputs:
         - name: concourse-day2-buildpacks
+        - name: pipeline-triggered-buildpack
       outputs:
         - name: run-info
       run:
        path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
-#  - put: notify-operator
-#    params:
-#      subject: "c0-Day2-Pipeline Triggered Run"
-#      body: "BLAH"
+  - put: notify-operator
+    params:
+      subject: run-info/subject
+      body: run-info/body
 
 # Apply to Prod if so desired
 - name: update-buildpacks-prod
