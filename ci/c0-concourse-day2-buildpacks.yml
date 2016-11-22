@@ -4,33 +4,34 @@ groups:
   jobs:
   - update-buildpacks-java
   - test-buildpack-java
-  - update-buildpacks-go
-  - test-buildpack-go
-  - update-buildpacks-nodejs
-  - test-buildpack-nodejs
-  - notify-operator
-  - update-buildpacks-prod
+#  - update-buildpacks-go
+#  - test-buildpack-go
+#  - update-buildpacks-nodejs
+#  - test-buildpack-nodejs
+  - notify-operator-java
+#  - notify-operator-go
+  - update-buildpacks-prod-java
 
 - name: update-buildpacks-java
   jobs:
   - update-buildpacks-java
   - test-buildpack-java
-  - notify-operator
-  - update-buildpacks-prod
+  - notify-operator-java
+  - update-buildpacks-prod-java
 
 - name: update-buildpacks-go
   jobs:
-  - update-buildpacks-go
-  - test-buildpack-go
-  - notify-operator
-  - update-buildpacks-prod
+#  - update-buildpacks-go
+#  - test-buildpack-go
+#  - notify-operator
+#  - update-buildpacks-prod
 
 - name: update-buildpacks-nodejs
   jobs:
-  - update-buildpacks-nodejs
-  - test-buildpack-nodejs
-  - notify-operator
-  - update-buildpacks-prod
+#  - update-buildpacks-nodejs
+#  - test-buildpack-nodejs
+#  - notify-operator
+#  - update-buildpacks-prod
 
 
 resource_types:
@@ -146,7 +147,6 @@ jobs:
   - aggregate:
     - get: concourse-day2-buildpacks
       trigger: false
-      passed: [update-buildpacks-java]
     - get: java-buildpack-release
       trigger: true
       passed: [update-buildpacks-java]
@@ -154,6 +154,7 @@ jobs:
       passed: [update-buildpacks-java]
       trigger: true
     - get: pipeline-triggered-buildpack
+      passed: [update-buildpacks-java]
   - task: test-buildpack-java
     config:
       platform: linux
@@ -169,125 +170,19 @@ jobs:
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
 
-#### Golang Buildpack
-- name: update-buildpacks-go
-  serial: true
-  max_in_flight: 1
-  serial_groups: [full]
-  plan:
-  - aggregate:
-    - get: concourse-day2-buildpacks
-      trigger: false
-    - get: go-buildpack-release
-      trigger: true
-  - task: update-buildpacks
-    config:
-      platform: linux
-      image: docker:///virtmerlin/c0-worker
-      inputs:
-        - name: concourse-day2-buildpacks
-        - name: go-buildpack-release
-      run:
-        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
-      params:
-        buildpack: "go_buildpack"
-        sandbox_cf_api: {{sandbox_cf_api}}
-        sandbox_cf_user: {{sandbox_cf_user}}
-        sandbox_cf_password: {{sandbox_cf_password}}
-        pivnet_api_token: {{pivnet_api_token}}
-- name: test-buildpack-go
-  serial: true
-  max_in_flight: 1
-  serial_groups: [full]
-  plan:
-  - aggregate:
-    - get: concourse-day2-buildpacks
-      trigger: false
-      passed: [update-buildpacks-go]
-    - get: go-buildpack-release
-      trigger: true
-      passed: [update-buildpacks-go]
-  - task: test-buildpack-go
-    config:
-      platform: linux
-      image: docker:///virtmerlin/c0-worker
-      inputs:
-        - name: concourse-day2-buildpacks
-        - name: go-buildpack-release
-      run:
-        path: concourse-day2-buildpacks/ci/tasks/test/test-buildpacks.sh
-      params:
-        buildpack: "java_buildpack_offline"
-        sandbox_cf_api: {{sandbox_cf_api}}
-        sandbox_cf_user: {{sandbox_cf_user}}
-        sandbox_cf_password: {{sandbox_cf_password}}
-
-#### Node Buildpack
-- name: update-buildpacks-nodejs
-  serial: true
-  max_in_flight: 1
-  serial_groups: [full]
-  plan:
-  - aggregate:
-    - get: concourse-day2-buildpacks
-      trigger: false
-    - get: nodejs-buildpack-release
-      trigger: true
-  - task: update-buildpacks
-    config:
-      platform: linux
-      image: docker:///virtmerlin/c0-worker
-      inputs:
-        - name: concourse-day2-buildpacks
-        - name: nodejs-buildpack-release
-      run:
-        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
-      params:
-        buildpack: "nodejs_buildpack"
-        sandbox_cf_api: {{sandbox_cf_api}}
-        sandbox_cf_user: {{sandbox_cf_user}}
-        sandbox_cf_password: {{sandbox_cf_password}}
-        pivnet_api_token: {{pivnet_api_token}}
-- name: test-buildpack-nodejs
-  serial: true
-  max_in_flight: 1
-  serial_groups: [full]
-  plan:
-  - aggregate:
-    - get: concourse-day2-buildpacks
-      trigger: false
-      passed: [update-buildpacks-nodejs]
-    - get: nodejs-buildpack-release
-      trigger: true
-      passed: [update-buildpacks-nodejs]
-  - task: test-buildpack-nodejs
-    config:
-      platform: linux
-      image: docker:///virtmerlin/c0-worker
-      inputs:
-        - name: concourse-day2-buildpacks
-        - name: nodejs-buildpack-release
-      run:
-        path: concourse-day2-buildpacks/ci/tasks/update/update-buildpacks.sh
-      params:
-        buildpack: "nodejs_buildpack"
-        sandbox_cf_api: {{sandbox_cf_api}}
-        sandbox_cf_user: {{sandbox_cf_user}}
-        sandbox_cf_password: {{sandbox_cf_password}}
-        pivnet_api_token: {{pivnet_api_token}}
-
 # Notify Operator
-- name: notify-operator
+- name: notify-operator-java
   serial: true
   max_in_flight: 1
   serial_groups: [full]
   plan:
   - get: pipeline-run-id
     trigger: true
-    passed: [test-buildpack-java]
+    passed: ["test-buildpack-java"]
   - get: concourse-day2-buildpacks
     trigger: false
   - get: pipeline-triggered-buildpack
+    passed: ["test-buildpack-java"]
   - task: notify-operator
     config:
       platform: linux
@@ -305,10 +200,22 @@ jobs:
       body: run-info/body
 
 # Apply to Prod if so desired
-- name: update-buildpacks-prod
+- name: update-buildpacks-prod-java
   serial: true
   max_in_flight: 1
   serial_groups: [full]
   plan:
     - get: pipeline-run-id
-      passed: [notify-operator]
+      passed: [notify-operator-java]
+      trigger: true
+  - task: update-buildpacks-prod-java
+    config:
+      platform: linux
+      image: docker:///virtmerlin/c0-worker
+      inputs:
+        - name: concourse-day2-buildpacks
+        - name: pipeline-triggered-buildpack
+      outputs:
+        - name: run-info
+      run:
+       path: concourse-day2-buildpacks/ci/tasks/prod/update-buildpacks-prod.sh
