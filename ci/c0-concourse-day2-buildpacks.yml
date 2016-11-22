@@ -45,10 +45,12 @@ resource_types:
     repository: pivotalcf/pivnet-resource
     tag: latest-final
 
-- name: email
+- name: slack-notification
   type: docker-image
   source:
-    repository: pcfseceng/email-resource
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
 
 resources:
 
@@ -70,15 +72,9 @@ resources:
     secret_access_key: {{aws_s3_secret}}
 
 - name: notify-operator
-  type: email
+  type: slack-notification
   source:
-    smtp:
-      host: {{smtp_host}}
-      port: {{smtp_port}}
-      username: {{smtp_username}}
-      password: {{smtp_password}}
-    from: c0-day2-buildpacks@customer0.net
-    to: [ "mglynn@pivotal.io" ]
+    url: {{slack-web-hook}}
 
 - name: concourse-day2-buildpacks
   type: git
@@ -141,6 +137,14 @@ jobs:
         sandbox_cf_user: {{sandbox_cf_user}}
         sandbox_cf_password: {{sandbox_cf_password}}
         pivnet_api_token: {{pivnet_api_token}}
+    on_failure:
+      put: notify-operator
+      params:
+        channel: '#testnotifications'
+        text: |
+          Job ${BUILD_JOB_NAME} failed!!!
+          Check here for more details ${ATC_EXTERNAL_URL}/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_ID}
+
   - put: pipeline-triggered-buildpack
     params:
       file: run-info/buildpack-*.id
@@ -198,10 +202,6 @@ jobs:
         - name: run-info
       run:
        path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
-  - put: notify-operator
-    params:
-      subject: run-info/subject
-      body: run-info/body
 # Apply to Prod if so desired
 - name: update-buildpacks-prod-java
   serial: true
@@ -324,10 +324,6 @@ jobs:
         - name: run-info
       run:
        path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
-  - put: notify-operator
-    params:
-      subject: run-info/subject
-      body: run-info/body
 # Apply to Prod if so desired
 - name: update-buildpacks-prod-go
   serial: true
@@ -450,10 +446,6 @@ jobs:
         - name: run-info
       run:
        path: concourse-day2-buildpacks/ci/tasks/notify/notify-operator.sh
-  - put: notify-operator
-    params:
-      subject: run-info/subject
-      body: run-info/body
 # Apply to Prod if so desired
 - name: update-buildpacks-prod-nodejs
   serial: true
