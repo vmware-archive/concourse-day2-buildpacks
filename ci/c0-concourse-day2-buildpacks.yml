@@ -10,6 +10,10 @@ groups:
   - test-buildpack-go
   - notify-operator-go
   - update-buildpacks-prod-go
+  - update-buildpacks-nodejs
+  - test-buildpack-nodejs
+  - notify-operator-nodejs
+  - update-buildpacks-nodejs
 
 - name: update-buildpacks-java
   jobs:
