@@ -13,7 +13,7 @@ groups:
   - update-buildpacks-nodejs
   - test-buildpack-nodejs
   - notify-operator-nodejs
-  - update-buildpacks-nodejs
+  - update-buildpacks-prod-nodejs
 
 - name: update-buildpacks-java
   jobs:
@@ -34,7 +34,7 @@ groups:
   - update-buildpacks-nodejs
   - test-buildpack-nodejs
   - notify-operator-nodejs
-  - update-buildpacks-nodejs
+  - update-buildpacks-prod-nodejs
 
 
 resource_types:
